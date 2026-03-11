@@ -1,0 +1,196 @@
+{
+  "users": [
+    {
+      "id": "f1",
+      "username": "faculty",
+      "password": "faculty123",
+      "role": "faculty",
+      "name": "Dr. Kumar"
+    },
+    {
+      "id": "f2",
+      "username": "faculty2",
+      "password": "faculty123",
+      "role": "faculty",
+      "name": "Prof. Sharma"
+    },
+    {
+      "id": "s1",
+      "username": "student",
+      "password": "student123",
+      "role": "student",
+      "name": "Arun M",
+      "usn": "1RV21CS001"
+    }
+  ],
+  "sessions": [
+    {
+      "token": "41da9407-80b8-4504-b045-f2919e0b20b6",
+      "userId": "f1",
+      "role": "faculty",
+      "createdAt": "2026-03-11T18:48:55.357Z"
+    }
+  ],
+  "marksEntries": [
+    {
+      "id": "d1957784-61d1-43ac-ad00-28bebb8ecb1e",
+      "semester": "4",
+      "section": "A",
+      "subject": "dsa",
+      "students": [
+        {
+          "usn": "4CB22CS001",
+          "name": "Arjun Kumar",
+          "theory": {
+            "ia1": "60",
+            "ia2": "30",
+            "ia3": "20",
+            "assignment": "10"
+          },
+          "lab": {
+            "internal": "",
+            "external": ""
+          }
+        },
+        {
+          "usn": "4CB22CS002",
+          "name": "Rahul Sharma",
+          "theory": {
+            "ia1": "",
+            "ia2": "",
+            "ia3": "",
+            "assignment": ""
+          },
+          "lab": {
+            "internal": "",
+            "external": ""
+          }
+        },
+        {
+          "usn": "4CB22CS003",
+          "name": "Priya Nair",
+          "theory": {
+            "ia1": "",
+            "ia2": "",
+            "ia3": "",
+            "assignment": ""
+          },
+          "lab": {
+            "internal": "",
+            "external": ""
+          }
+        },
+        {
+          "usn": "4CB22CS004",
+          "name": "Ananya Shetty",
+          "theory": {
+            "ia1": "",
+            "ia2": "",
+            "ia3": "",
+            "assignment": ""
+          },
+          "lab": {
+            "internal": "",
+            "external": ""
+          }
+        },
+        {
+          "usn": "4CB22CS005",
+          "name": "Rohan Verma",
+          "theory": {
+            "ia1": "",
+            "ia2": "",
+            "ia3": "",
+            "assignment": ""
+          },
+          "lab": {
+            "internal": "",
+            "external": ""
+          }
+        }
+      ],
+      "facultyId": "f1",
+      "updatedAt": "2026-03-11T18:44:12.348Z"
+    },
+    {
+      "id": "c1636440-db28-4cb7-b56d-b8107f5a6441",
+      "semester": "2",
+      "section": "A",
+      "subject": "dsa",
+      "students": [
+        {
+          "usn": "4CB22CS001",
+          "name": "Arjun Kumar",
+          "theory": {
+            "ia1": "50",
+            "ia2": "",
+            "ia3": "",
+            "assignment": ""
+          },
+          "lab": {
+            "internal": "",
+            "external": ""
+          }
+        },
+        {
+          "usn": "4CB22CS002",
+          "name": "Rahul Sharma",
+          "theory": {
+            "ia1": "",
+            "ia2": "",
+            "ia3": "",
+            "assignment": ""
+          },
+          "lab": {
+            "internal": "",
+            "external": ""
+          }
+        },
+        {
+          "usn": "4CB22CS003",
+          "name": "Priya Nair",
+          "theory": {
+            "ia1": "",
+            "ia2": "",
+            "ia3": "",
+            "assignment": ""
+          },
+          "lab": {
+            "internal": "",
+            "external": ""
+          }
+        },
+        {
+          "usn": "4CB22CS004",
+          "name": "Ananya Shetty",
+          "theory": {
+            "ia1": "",
+            "ia2": "",
+            "ia3": "",
+            "assignment": ""
+          },
+          "lab": {
+            "internal": "",
+            "external": ""
+          }
+        },
+        {
+          "usn": "4CB22CS005",
+          "name": "Rohan Verma",
+          "theory": {
+            "ia1": "",
+            "ia2": "",
+            "ia3": "",
+            "assignment": ""
+          },
+          "lab": {
+            "internal": "",
+            "external": ""
+          }
+        }
+      ],
+      "facultyId": "f1",
+      "updatedAt": "2026-03-11T18:45:23.002Z"
+    }
+  ]
+}
