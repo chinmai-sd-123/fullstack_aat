@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="IPCC Subject Marks Entry System - Faculty and Student Login">
+  <title>IPCC Marks Entry - Login</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <div class="login-wrapper">
+    <div class="login-left">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+
+      <h1>IPCC Marks<br>Entry System</h1>
+      <span class="typed-line">Upload students, enter marks, download results.</span>
+
+      <ul class="features">
+        <li><span class="check">&#10003;</span> Upload student USN & Name from Excel / CSV</li>
+        <li><span class="check">&#10003;</span> Separate Theory and Lab marks sections</li>
+        <li><span class="check">&#10003;</span> Download as Excel (separate sheets) or CSV</li>
+        <li><span class="check">&#10003;</span> Student login to view their marks</li>
+      </ul>
+    </div>
+
+    <div class="login-right">
+      <div class="login-box">
+        <h2>Welcome back</h2>
+        <p class="login-sub">Sign in to your account to continue</p>
+
+        <div id="errorMsg" class="error-msg"></div>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="Enter your username" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="loginBtn">Sign In</button>
+        </form>
+
+        <div class="demo-creds">
+          <strong>Demo accounts:</strong><br>
+          Faculty &mdash; <strong>faculty</strong> / <strong>faculty123</strong><br>
+          Student &mdash; <strong>student</strong> / <strong>student123</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+</body>
+
+</html>

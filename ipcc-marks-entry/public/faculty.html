@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="IPCC Faculty Dashboard - Marks Entry and Management">
+    <title>IPCC Marks Entry - Faculty</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <header class="header">
+        <div class="brand">
+            <span class="brand-dot"></span>
+            IPCC Marks Entry
+        </div>
+        <div class="user-area">
+            <span id="navUserName"></span>
+            <span class="role-badge">Faculty</span>
+            <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <div class="page">
+        <!-- Quick Stats -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-card blue anim-fade-up">
+                <div class="stat-label">Total Entries</div>
+                <div class="stat-value" id="statEntries">0</div>
+                <div class="stat-sub">Saved mark sheets</div>
+            </div>
+            <div class="stat-card green anim-fade-up d1">
+                <div class="stat-label">Total Students</div>
+                <div class="stat-value" id="statStudents">0</div>
+                <div class="stat-sub">Across all entries</div>
+            </div>
+            <div class="stat-card amber anim-fade-up d2">
+                <div class="stat-label">Registered Users</div>
+                <div class="stat-value" id="statUsers">0</div>
+                <div class="stat-sub">Faculty + Students</div>
+            </div>
+        </div>
+
+        <!-- Step 1: Course config -->
+        <div class="section anim-fade-up d2" id="configCard">
+            <div class="section-header">
+                <div class="section-title">Course Details <span class="step-badge">Step 1</span></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="semester">Semester</label>
+                    <select id="semester">
+                        <option value="">Select semester</option>
+                        <option value="1">1st Semester</option>
+                        <option value="2">2nd Semester</option>
+                        <option value="3">3rd Semester</option>
+                        <option value="4">4th Semester</option>
+                        <option value="5">5th Semester</option>
+                        <option value="6">6th Semester</option>
+                        <option value="7">7th Semester</option>
+                        <option value="8">8th Semester</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="section">Section</label>
+                    <select id="section">
+                        <option value="">Select section</option>
+                        <option value="A">Section A</option>
+                        <option value="B">Section B</option>
+                        <option value="C">Section C</option>
+                        <option value="D">Section D</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="subject">IPCC Subject</label>
+                    <input type="text" id="subject" placeholder="e.g. Data Structures">
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Upload students -->
+        <div class="section anim-fade-up d3" id="uploadCard">
+            <div class="section-header">
+                <div class="section-title">Upload Student List <span class="step-badge">Step 2</span></div>
+            </div>
+            <p class="hint">Upload an Excel or CSV file with <strong>USN</strong> and <strong>Name</strong> columns.</p>
+            <div class="upload-area" id="uploadZone">
+                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+                <span class="up-icon">&#8679;</span>
+                <p>Click to browse or drag a file here</p>
+                <span class="supported">.xlsx, .xls, .csv</span>
+            </div>
+            <div id="studentCountBadge" class="loaded-badge" style="display:none;"></div>
+        </div>
+
+        <!-- Step 3: Marks entry -->
+        <div class="section anim-fade-up d4" id="marksCard" style="display:none;">
+            <div class="section-header">
+                <div class="section-title">Marks Entry <span class="step-badge">Step 3 &mdash; Row Wise</span></div>
+            </div>
+
+            <div class="tabs">
+                <button class="active" id="tabTheory" onclick="switchTab('theory')">Theory Marks</button>
+                <button id="tabLab" onclick="switchTab('lab')">Lab Marks</button>
+            </div>
+
+            <div id="theorySection">
+                <div class="table-wrap">
+                    <table class="marks-table" id="theoryTable">
+                        <thead>
+                            <tr>
+                                <th>Sl</th>
+                                <th>USN</th>
+                                <th>Name</th>
+                                <th>IA 1</th>
+                                <th>IA 2</th>
+                                <th>IA 3</th>
+                                <th>Assign.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="theoryBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="labSection" style="display:none;">
+                <div class="table-wrap">
+                    <table class="marks-table" id="labTable">
+                        <thead>
+                            <tr>
+                                <th>Sl</th>
+                                <th>USN</th>
+                                <th>Name</th>
+                                <th>Lab Internal</th>
+                                <th>Lab External</th>
+                            </tr>
+                        </thead>
+                        <tbody id="labBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-success" id="saveBtn" onclick="saveMarks()">Save Marks</button>
+                <button class="btn btn-primary" id="downloadExcelBtn" onclick="downloadExcel()"
+                    style="display:none;">Download Spreadsheet</button>
+                <button class="btn btn-outline" id="downloadCsvBtn" onclick="downloadCSV()"
+                    style="display:none;">Download CSV</button>
+            </div>
+        </div>
+
+        <!-- Saved entries -->
+        <div class="section anim-fade-up d4" id="savedEntriesCard">
+            <div class="section-header">
+                <div class="section-title">Saved Entries</div>
+            </div>
+            <div id="entriesList" class="entries-grid">
+                <div class="empty">No entries saved yet. Create one above.</div>
+            </div>
+        </div>
+
+        <!-- User Management -->
+        <div class="section anim-fade-up d5" id="userMgmtCard">
+            <div class="section-header">
+                <div class="section-title">Manage Users</div>
+                <button class="btn btn-primary btn-sm" id="toggleAddUserBtn" onclick="toggleAddUserForm()">+ Add
+                    User</button>
+            </div>
+
+            <div id="addUserForm" class="add-user-form" style="display:none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newName">Full Name</label>
+                        <input type="text" id="newName" placeholder="e.g. Rahul K">
+                    </div>
+                    <div class="form-group">
+                        <label for="newUsername">Username</label>
+                        <input type="text" id="newUsername" placeholder="e.g. rahul">
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">Password</label>
+                        <input type="text" id="newPassword" placeholder="Set a password">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newRole">Role</label>
+                        <select id="newRole" onchange="toggleUsnField()">
+                            <option value="student">Student</option>
+                            <option value="faculty">Faculty</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="usnFieldGroup">
+                        <label for="newUsn">USN (students only)</label>
+                        <input type="text" id="newUsn" placeholder="e.g. 1RV21CS011">
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:flex-end; gap:0.5rem;">
+                        <button class="btn btn-success btn-sm" onclick="createUser()">Create Account</button>
+                        <button class="btn btn-ghost btn-sm" onclick="toggleAddUserForm()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="userList" class="user-list"></div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/faculty.js"></script>
+</body>
+
+</html>
