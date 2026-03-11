@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { v4: uuidv4 } = require('uuid');
 const { generateExcel, generateCSV, parseStudentFile } = require('./excelService');
 const {
@@ -21,7 +22,10 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // --- Multer config ---
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, '..', 'uploads')),
+    destination: (req, file, cb) => {
+        // Use system temp directory for serverless deploy compatibility
+        cb(null, os.tmpdir());
+    },
     filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
 const upload = multer({
