@@ -100,7 +100,31 @@ function parseStudentFile(filePath) {
     // Try common column names
     const usn = row['USN'] || row['usn'] || row['Usn'] || row['Roll No'] || row['roll_no'] || '';
     const name = row['Name'] || row['name'] || row['Student Name'] || row['student_name'] || '';
-    return { usn: String(usn).trim(), name: String(name).trim() };
+
+    // Extract theory marks
+    const ia1 = row['IA1'] || row['ia1'] || row['IA 1'] || row['ia 1'] || row['Ia1'] || '';
+    const ia2 = row['IA2'] || row['ia2'] || row['IA 2'] || row['ia 2'] || row['Ia2'] || '';
+    const ia3 = row['IA3'] || row['ia3'] || row['IA 3'] || row['ia 3'] || row['Ia3'] || '';
+    const assignment = row['Assignment'] || row['assignment'] || row['Assign'] || '';
+
+    // Extract lab marks
+    const labInternal = row['Lab Internal'] || row['LabInternal'] || row['lab_internal'] || row['Lab Int'] || '';
+    const labExternal = row['Lab External'] || row['LabExternal'] || row['lab_external'] || row['Lab Ext'] || '';
+
+    return {
+      usn: String(usn).trim(),
+      name: String(name).trim(),
+      theory: {
+        ia1: ia1 !== '' ? String(ia1).trim() : '',
+        ia2: ia2 !== '' ? String(ia2).trim() : '',
+        ia3: ia3 !== '' ? String(ia3).trim() : '',
+        assignment: assignment !== '' ? String(assignment).trim() : ''
+      },
+      lab: {
+        internal: labInternal !== '' ? String(labInternal).trim() : '',
+        external: labExternal !== '' ? String(labExternal).trim() : ''
+      }
+    };
   }).filter(s => s.usn && s.name);
 
   return students;

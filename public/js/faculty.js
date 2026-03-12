@@ -59,9 +59,18 @@ async function handleFileUpload() {
 
         uploadedStudents = data.students.map(function (s) {
             return {
-                usn: s.usn, name: s.name,
-                theory: { ia1: '', ia2: '', ia3: '', assignment: '' },
-                lab: { internal: '', external: '' }
+                usn: s.usn,
+                name: s.name,
+                theory: {
+                    ia1: s.theory && s.theory.ia1 !== undefined ? s.theory.ia1 : '',
+                    ia2: s.theory && s.theory.ia2 !== undefined ? s.theory.ia2 : '',
+                    ia3: s.theory && s.theory.ia3 !== undefined ? s.theory.ia3 : '',
+                    assignment: s.theory && s.theory.assignment !== undefined ? s.theory.assignment : ''
+                },
+                lab: {
+                    internal: s.lab && s.lab.internal !== undefined ? s.lab.internal : '',
+                    external: s.lab && s.lab.external !== undefined ? s.lab.external : ''
+                }
             };
         });
 
