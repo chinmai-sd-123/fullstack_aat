@@ -1,11 +1,12 @@
 # Dependencies
 node_modules/
-ipcc-marks-entry/node_modules/
 
 # Database files (don't commit live data!)
-ipcc-marks-entry/data/*.db
-ipcc-marks-entry/data/*.sqlite
-ipcc-marks-entry/data/db.json
+data/
+*.db
+*.sqlite
+*.db-shm
+*.db-wal
 
 # Environment variables
 .env
