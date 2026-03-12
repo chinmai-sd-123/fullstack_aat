@@ -93,41 +93,83 @@ function generateCSV(entry) {
  */
 function parseStudentFile(filePath) {
   const wb = XLSX.readFile(filePath);
-  const sheetName = wb.SheetNames[0];
-  const data = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: '' });
+  const studentsMap = {}; // Keyed by USN to merge data across sheets
 
-  const students = data.map(row => {
-    // Try common column names
-    const usn = row['USN'] || row['usn'] || row['Usn'] || row['Roll No'] || row['roll_no'] || '';
-    const name = row['Name'] || row['name'] || row['Student Name'] || row['student_name'] || '';
+  for (const sheetName of wb.SheetNames) {
+    // Read raw 2D array: each row is an array of cell values
+    const sheetData = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: '' });
 
-    // Extract theory marks
-    const ia1 = row['IA1'] || row['ia1'] || row['IA 1'] || row['ia 1'] || row['Ia1'] || '';
-    const ia2 = row['IA2'] || row['ia2'] || row['IA 2'] || row['ia 2'] || row['Ia2'] || '';
-    const ia3 = row['IA3'] || row['ia3'] || row['IA 3'] || row['ia 3'] || row['Ia3'] || '';
-    const assignment = row['Assignment'] || row['assignment'] || row['Assign'] || '';
+    // There might be multiple header rows in a single sheet (like our generated CSVs)
+    let headerRowIdx = -1;
+    let headers = [];
 
-    // Extract lab marks
-    const labInternal = row['Lab Internal'] || row['LabInternal'] || row['lab_internal'] || row['Lab Int'] || '';
-    const labExternal = row['Lab External'] || row['LabExternal'] || row['lab_external'] || row['Lab Ext'] || '';
+    // Scan for all header rows containing USN
+    for (let i = 0; i < sheetData.length; i++) {
+      const row = sheetData[i];
+      if (!row || !Array.isArray(row)) continue;
 
-    return {
-      usn: String(usn).trim(),
-      name: String(name).trim(),
-      theory: {
-        ia1: ia1 !== '' ? String(ia1).trim() : '',
-        ia2: ia2 !== '' ? String(ia2).trim() : '',
-        ia3: ia3 !== '' ? String(ia3).trim() : '',
-        assignment: assignment !== '' ? String(assignment).trim() : ''
-      },
-      lab: {
-        internal: labInternal !== '' ? String(labInternal).trim() : '',
-        external: labExternal !== '' ? String(labExternal).trim() : ''
+      if (row.some(cell => String(cell).toLowerCase().trim() === 'usn')) {
+        headerRowIdx = i;
+        // Clean up headers (lowercase, no spaces/special chars)
+        headers = row.map(h => String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
+
+        // Parse data rows below this header until we hit an empty row or another header
+        for (let j = headerRowIdx + 1; j < sheetData.length; j++) {
+          const dataRow = sheetData[j];
+          if (!dataRow || !dataRow.length) continue; // Skip empty rows
+
+          // If we hit another header row, break the inner loop to let the outer loop find it
+          if (dataRow.some(cell => String(cell).toLowerCase().trim() === 'usn')) {
+            i = j - 1; // Advance outer loop
+            break;
+          }
+
+          // Build object mapping clean header to value
+          const rowObj = {};
+          for (let k = 0; k < headers.length; k++) {
+            if (headers[k]) {
+              rowObj[headers[k]] = dataRow[k];
+            }
+          }
+
+          const usn = String(rowObj['usn'] || rowObj['rollno'] || '').trim();
+          const name = String(rowObj['name'] || rowObj['studentname'] || '').trim();
+
+          if (!usn || !name) continue;
+
+          if (!studentsMap[usn]) {
+            studentsMap[usn] = {
+              usn, name,
+              theory: { ia1: '', ia2: '', ia3: '', assignment: '' },
+              lab: { internal: '', external: '' }
+            };
+          }
+
+          const s = studentsMap[usn];
+
+          // Theory marks mapping
+          const ia1 = rowObj['ia1'];
+          const ia2 = rowObj['ia2'];
+          const ia3 = rowObj['ia3'];
+          const assignment = rowObj['assignment'] || rowObj['assign'];
+
+          if (ia1 !== undefined && ia1 !== '') s.theory.ia1 = String(ia1).trim();
+          if (ia2 !== undefined && ia2 !== '') s.theory.ia2 = String(ia2).trim();
+          if (ia3 !== undefined && ia3 !== '') s.theory.ia3 = String(ia3).trim();
+          if (assignment !== undefined && assignment !== '') s.theory.assignment = String(assignment).trim();
+
+          // Lab marks mapping
+          const labInternal = rowObj['labinternal'] || rowObj['labint'];
+          const labExternal = rowObj['labexternal'] || rowObj['labext'];
+
+          if (labInternal !== undefined && labInternal !== '') s.lab.internal = String(labInternal).trim();
+          if (labExternal !== undefined && labExternal !== '') s.lab.external = String(labExternal).trim();
+        }
       }
-    };
-  }).filter(s => s.usn && s.name);
+    }
+  }
 
-  return students;
+  return Object.values(studentsMap);
 }
 
 function calculateTheoryTotal(theory) {
