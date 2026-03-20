@@ -1,5 +1,20 @@
 // Auth Logic
 
+// Toggle password visibility
+function togglePassword() {
+    var pw = document.getElementById('password');
+    var btn = document.getElementById('togglePw');
+    if (pw.type === 'password') {
+        pw.type = 'text';
+        btn.innerHTML = '&#128064;';
+        btn.title = 'Hide password';
+    } else {
+        pw.type = 'password';
+        btn.innerHTML = '&#128065;';
+        btn.title = 'Show password';
+    }
+}
+
 // Redirect to dashboard if already logged in (only on login page)
 var loginForm = document.getElementById('loginForm');
 if (loginForm) {
