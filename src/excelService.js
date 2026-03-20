@@ -10,24 +10,31 @@ function generateExcel(entry) {
   const wb = XLSX.utils.book_new();
 
   // --- Theory Sheet ---
-  const theoryRows = entry.students.map((s, i) => ({
-    'Sl No': i + 1,
-    'USN': s.usn,
-    'Student Name': s.name,
-    'IA1': s.theory?.ia1 ?? '',
-    'IA2': s.theory?.ia2 ?? '',
-    'IA3': s.theory?.ia3 ?? '',
-    'Avg IA': s.theory?.ia1 != null && s.theory?.ia2 != null && s.theory?.ia3 != null
-      ? Math.round(((+s.theory.ia1 + +s.theory.ia2 + +s.theory.ia3) / 3) * 100) / 100
-      : '',
-    'Assignment': s.theory?.assignment ?? '',
-    'Total': calculateTheoryTotal(s.theory)
-  }));
+  const theoryRows = entry.students.map((s, i) => {
+    const ia1 = s.theory?.ia1 != null && s.theory.ia1 !== '' ? +s.theory.ia1 : null;
+    const ia2 = s.theory?.ia2 != null && s.theory.ia2 !== '' ? +s.theory.ia2 : null;
+    const ia3 = s.theory?.ia3 != null && s.theory.ia3 !== '' ? +s.theory.ia3 : null;
+    const validIAs = [ia1, ia2, ia3].filter(v => v !== null);
+    const avgIA50 = validIAs.length ? validIAs.reduce((a, b) => a + b, 0) / validIAs.length : null;
+    const avgIA30 = avgIA50 !== null ? Math.round((avgIA50 * 30 / 50) * 100) / 100 : '';
+    return {
+      'Sl No': i + 1,
+      'USN': s.usn,
+      'Student Name': s.name,
+      'IA1': s.theory?.ia1 ?? '',
+      'IA2': s.theory?.ia2 ?? '',
+      'IA3': s.theory?.ia3 ?? '',
+      'Avg IA(50)': avgIA50 !== null ? Math.round(avgIA50 * 100) / 100 : '',
+      'Avg IA(30)': avgIA30,
+      'Assignment': s.theory?.assignment ?? '',
+      'Total': calculateTheoryTotal(s.theory)
+    };
+  });
   const theorySheet = XLSX.utils.json_to_sheet(theoryRows);
   theorySheet['!cols'] = [
     { wch: 6 }, { wch: 15 }, { wch: 25 },
     { wch: 6 }, { wch: 6 }, { wch: 6 },
-    { wch: 8 }, { wch: 12 }, { wch: 8 }
+    { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 8 }
   ];
   XLSX.utils.book_append_sheet(wb, theorySheet, 'Theory Marks');
 
@@ -57,20 +64,27 @@ function generateExcel(entry) {
  */
 function generateCSV(entry) {
   // Theory CSV
-  const theoryData = entry.students.map((s, i) => ({
-    SlNo: i + 1,
-    USN: s.usn,
-    StudentName: s.name,
-    IA1: s.theory?.ia1 ?? '',
-    IA2: s.theory?.ia2 ?? '',
-    IA3: s.theory?.ia3 ?? '',
-    AvgIA: s.theory?.ia1 != null && s.theory?.ia2 != null && s.theory?.ia3 != null
-      ? Math.round(((+s.theory.ia1 + +s.theory.ia2 + +s.theory.ia3) / 3) * 100) / 100
-      : '',
-    Assignment: s.theory?.assignment ?? '',
-    Total: calculateTheoryTotal(s.theory)
-  }));
-  const theoryParser = new Parser({ fields: ['SlNo', 'USN', 'StudentName', 'IA1', 'IA2', 'IA3', 'AvgIA', 'Assignment', 'Total'] });
+  const theoryData = entry.students.map((s, i) => {
+    const ia1 = s.theory?.ia1 != null && s.theory.ia1 !== '' ? +s.theory.ia1 : null;
+    const ia2 = s.theory?.ia2 != null && s.theory.ia2 !== '' ? +s.theory.ia2 : null;
+    const ia3 = s.theory?.ia3 != null && s.theory.ia3 !== '' ? +s.theory.ia3 : null;
+    const validIAs = [ia1, ia2, ia3].filter(v => v !== null);
+    const avgIA50 = validIAs.length ? validIAs.reduce((a, b) => a + b, 0) / validIAs.length : null;
+    const avgIA30 = avgIA50 !== null ? Math.round((avgIA50 * 30 / 50) * 100) / 100 : '';
+    return {
+      SlNo: i + 1,
+      USN: s.usn,
+      StudentName: s.name,
+      IA1: s.theory?.ia1 ?? '',
+      IA2: s.theory?.ia2 ?? '',
+      IA3: s.theory?.ia3 ?? '',
+      AvgIA50: avgIA50 !== null ? Math.round(avgIA50 * 100) / 100 : '',
+      AvgIA30: avgIA30,
+      Assignment: s.theory?.assignment ?? '',
+      Total: calculateTheoryTotal(s.theory)
+    };
+  });
+  const theoryParser = new Parser({ fields: ['SlNo', 'USN', 'StudentName', 'IA1', 'IA2', 'IA3', 'AvgIA50', 'AvgIA30', 'Assignment', 'Total'] });
   const theoryCsv = theoryParser.parse(theoryData);
 
   // Lab CSV
@@ -174,14 +188,16 @@ function parseStudentFile(filePath) {
 
 function calculateTheoryTotal(theory) {
   if (!theory) return '';
-  const ia1 = theory.ia1 != null ? +theory.ia1 : null;
-  const ia2 = theory.ia2 != null ? +theory.ia2 : null;
-  const ia3 = theory.ia3 != null ? +theory.ia3 : null;
-  const assignment = theory.assignment != null ? +theory.assignment : 0;
+  const ia1 = theory.ia1 != null && theory.ia1 !== '' ? +theory.ia1 : null;
+  const ia2 = theory.ia2 != null && theory.ia2 !== '' ? +theory.ia2 : null;
+  const ia3 = theory.ia3 != null && theory.ia3 !== '' ? +theory.ia3 : null;
+  const assignment = theory.assignment != null && theory.assignment !== '' ? +theory.assignment : 0;
   if (ia1 === null && ia2 === null && ia3 === null) return '';
-  const avg = [ia1, ia2, ia3].filter(v => v !== null);
-  const avgIA = avg.length ? avg.reduce((a, b) => a + b, 0) / avg.length : 0;
-  return Math.round((avgIA + assignment) * 100) / 100;
+  const validIAs = [ia1, ia2, ia3].filter(v => v !== null);
+  const avgIA50 = validIAs.length ? validIAs.reduce((a, b) => a + b, 0) / validIAs.length : 0;
+  // Scale average from 50 to 30
+  const avgIA30 = avgIA50 * 30 / 50;
+  return Math.round((avgIA30 + assignment) * 100) / 100;
 }
 
 function calculateLabTotal(lab) {
