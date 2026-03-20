@@ -40,7 +40,8 @@ function generateExcel(entry) {
 
   // --- Lab Sheet ---
   const labRows = entry.students.map((s, i) => {
-    const labRaw = s.lab?.internal != null && s.lab.internal !== '' ? +s.lab.internal : null;
+    const labRaw = (s.lab?.marks != null && s.lab.marks !== '' ? +s.lab.marks : null)
+      || (s.lab?.internal != null && s.lab.internal !== '' ? +s.lab.internal : null);
     const lab20 = labRaw !== null ? Math.round((labRaw * 20 / 50) * 100) / 100 : '';
     return {
       'Sl No': i + 1,
@@ -92,7 +93,8 @@ function generateCSV(entry) {
 
   // Lab CSV
   const labData = entry.students.map((s, i) => {
-    const labRaw = s.lab?.internal != null && s.lab.internal !== '' ? +s.lab.internal : null;
+    const labRaw = (s.lab?.marks != null && s.lab.marks !== '' ? +s.lab.marks : null)
+      || (s.lab?.internal != null && s.lab.internal !== '' ? +s.lab.internal : null);
     const lab20 = labRaw !== null ? Math.round((labRaw * 20 / 50) * 100) / 100 : '';
     return {
       SlNo: i + 1,
@@ -161,7 +163,7 @@ function parseStudentFile(filePath) {
             studentsMap[usn] = {
               usn, name,
               theory: { ia1: '', ia2: '', ia3: '', assignment: '' },
-              lab: { internal: '', external: '' }
+              lab: { marks: '' }
             };
           }
 
@@ -171,19 +173,17 @@ function parseStudentFile(filePath) {
           const ia1 = rowObj['ia1'];
           const ia2 = rowObj['ia2'];
           const ia3 = rowObj['ia3'];
-          const assignment = rowObj['assignment'] || rowObj['assign'];
+          const assignment = rowObj['assignment'] || rowObj['assign'] || rowObj['assignmer'] || rowObj['assignment20'];
 
           if (ia1 !== undefined && ia1 !== '') s.theory.ia1 = String(ia1).trim();
           if (ia2 !== undefined && ia2 !== '') s.theory.ia2 = String(ia2).trim();
           if (ia3 !== undefined && ia3 !== '') s.theory.ia3 = String(ia3).trim();
           if (assignment !== undefined && assignment !== '') s.theory.assignment = String(assignment).trim();
 
-          // Lab marks mapping
-          const labInternal = rowObj['labinternal'] || rowObj['labint'];
-          const labExternal = rowObj['labexternal'] || rowObj['labext'];
+          // Lab marks mapping (single field: raw marks out of 50)
+          const labMarks = rowObj['labmarks50'] || rowObj['labmarks'] || rowObj['labmarks50'] || rowObj['labinternal'] || rowObj['labint'] || rowObj['lab'];
 
-          if (labInternal !== undefined && labInternal !== '') s.lab.internal = String(labInternal).trim();
-          if (labExternal !== undefined && labExternal !== '') s.lab.external = String(labExternal).trim();
+          if (labMarks !== undefined && labMarks !== '') s.lab.marks = String(labMarks).trim();
         }
       }
     }
@@ -208,7 +208,8 @@ function calculateTheoryTotal(theory) {
 
 function calculateLabTotal(lab) {
   if (!lab) return '';
-  const marks = lab.internal != null && lab.internal !== '' ? +lab.internal : null;
+  const marks = (lab.marks != null && lab.marks !== '' ? +lab.marks : null)
+    || (lab.internal != null && lab.internal !== '' ? +lab.internal : null);
   if (marks === null) return '';
   return Math.round((marks * 20 / 50) * 100) / 100;
 }
