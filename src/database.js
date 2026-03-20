@@ -17,7 +17,7 @@ async function initDb() {
                 id TEXT PRIMARY KEY,
                 username TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
-                role TEXT NOT NULL CHECK(role IN ('faculty', 'student')),
+                role TEXT NOT NULL CHECK(role IN ('faculty')),
                 name TEXT NOT NULL,
                 usn TEXT
             );
@@ -58,7 +58,6 @@ async function initDb() {
       const insertUser = 'INSERT INTO users (id, username, password, role, name, usn) VALUES ($1, $2, $3, $4, $5, $6)';
       await pool.query(insertUser, ['f1', 'faculty', 'faculty123', 'faculty', 'Dr. Kumar', null]);
       await pool.query(insertUser, ['f2', 'faculty2', 'faculty123', 'faculty', 'Prof. Sharma', null]);
-      await pool.query(insertUser, ['s1', 'student', 'student123', 'student', 'Arun M', '1RV21CS001']);
       console.log('  Seeded default users to PostgreSQL');
     }
     console.log('PostgreSQL Database connected and initialized.');
@@ -145,10 +144,6 @@ module.exports = {
   },
   findMarksByEntry: async (entry_id) => {
     const res = await pool.query('SELECT * FROM student_marks WHERE entry_id = $1', [entry_id]);
-    return res.rows;
-  },
-  findMarksByUsn: async (usn) => {
-    const res = await pool.query('SELECT sm.*, me.semester, me.section, me.subject, me.updated_at FROM student_marks sm JOIN marks_entries me ON sm.entry_id = me.id WHERE sm.usn = $1', [usn]);
     return res.rows;
   },
   countStudentsByEntry: async (entry_id) => {

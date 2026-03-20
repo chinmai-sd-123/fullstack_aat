@@ -99,10 +99,10 @@ function buildMarksTable() {
             '<td class="col-sl">' + (i + 1) + '</td>' +
             '<td class="col-usn">' + s.usn + '</td>' +
             '<td class="col-name" title="' + s.name + '">' + s.name + '</td>' +
-            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia1" value="' + s.theory.ia1 + '" placeholder="-"></td>' +
-            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia2" value="' + s.theory.ia2 + '" placeholder="-"></td>' +
-            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia3" value="' + s.theory.ia3 + '" placeholder="-"></td>' +
-            '<td><input type="number" min="0" max="20" data-idx="' + i + '" data-field="assignment" value="' + s.theory.assignment + '" placeholder="-"></td>';
+            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia1" value="' + s.theory.ia1 + '" placeholder="-">' +
+            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia2" value="' + s.theory.ia2 + '" placeholder="-">' +
+            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia3" value="' + s.theory.ia3 + '" placeholder="-">' +
+            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="assignment" value="' + s.theory.assignment + '" placeholder="-">';
         theoryBody.appendChild(tRow);
 
         var lRow = document.createElement('tr');
@@ -110,25 +110,39 @@ function buildMarksTable() {
             '<td class="col-sl">' + (i + 1) + '</td>' +
             '<td class="col-usn">' + s.usn + '</td>' +
             '<td class="col-name" title="' + s.name + '">' + s.name + '</td>' +
-            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="labInternal" value="' + s.lab.internal + '" placeholder="-"></td>' +
-            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="labExternal" value="' + s.lab.external + '" placeholder="-"></td>';
+            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="labInternal" value="' + s.lab.internal + '" placeholder="-">' +
+            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="labExternal" value="' + s.lab.external + '" placeholder="-">';
         labBody.appendChild(lRow);
     });
 
     document.getElementById('theoryTable').addEventListener('input', function (e) {
         if (e.target.tagName === 'INPUT') {
+            var val = e.target.value;
+            if (val !== '' && (Number(val) > 50 || Number(val) < 0)) {
+                e.target.style.border = '2px solid #ef4444';
+                showToast('Marks must be between 0 and 50', 'error');
+                return;
+            }
+            e.target.style.border = '';
             var idx = +e.target.dataset.idx;
             var field = e.target.dataset.field;
-            uploadedStudents[idx].theory[field] = e.target.value;
+            uploadedStudents[idx].theory[field] = val;
         }
     });
 
     document.getElementById('labTable').addEventListener('input', function (e) {
         if (e.target.tagName === 'INPUT') {
+            var val = e.target.value;
+            if (val !== '' && (Number(val) > 50 || Number(val) < 0)) {
+                e.target.style.border = '2px solid #ef4444';
+                showToast('Marks must be between 0 and 50', 'error');
+                return;
+            }
+            e.target.style.border = '';
             var idx = +e.target.dataset.idx;
             var field = e.target.dataset.field;
-            if (field === 'labInternal') uploadedStudents[idx].lab.internal = e.target.value;
-            if (field === 'labExternal') uploadedStudents[idx].lab.external = e.target.value;
+            if (field === 'labInternal') uploadedStudents[idx].lab.internal = val;
+            if (field === 'labExternal') uploadedStudents[idx].lab.external = val;
         }
     });
 }
@@ -154,6 +168,21 @@ async function saveMarks() {
     if (!uploadedStudents.length) {
         showToast('Upload a student list first', 'error');
         return;
+    }
+
+    // Client-side validation: no marks > 50
+    for (var vi = 0; vi < uploadedStudents.length; vi++) {
+        var st = uploadedStudents[vi];
+        var allVals = [st.theory.ia1, st.theory.ia2, st.theory.ia3, st.theory.assignment, st.lab.internal, st.lab.external];
+        for (var vj = 0; vj < allVals.length; vj++) {
+            if (allVals[vj] !== '' && allVals[vj] !== null && allVals[vj] !== undefined) {
+                var num = Number(allVals[vj]);
+                if (isNaN(num) || num < 0 || num > 50) {
+                    showToast('Marks must be between 0 and 50. Check ' + st.usn, 'error');
+                    return;
+                }
+            }
+        }
     }
 
     var saveBtn = document.getElementById('saveBtn');

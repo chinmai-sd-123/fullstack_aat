@@ -6,7 +6,7 @@ if (loginForm) {
     var token = localStorage.getItem('token');
     var role = localStorage.getItem('role');
     if (token && role) {
-        window.location.replace(role === 'faculty' ? 'faculty.html' : 'student.html');
+        window.location.replace('faculty.html');
     }
 }
 
@@ -43,7 +43,7 @@ if (loginForm) {
                 localStorage.setItem('userName', result.data.name);
                 localStorage.setItem('userId', result.data.userId);
 
-                window.location.href = result.data.role === 'faculty' ? 'faculty.html' : 'student.html';
+                window.location.href = 'faculty.html';
             })
             .catch(function (err) {
                 errorMsg.textContent = err.message;

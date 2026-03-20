@@ -9,7 +9,7 @@ const {
     pool, findUser, findUserById, getAllUsers, findUserByUsername, insertUser, deleteUser,
     insertSession, findSession, deleteSession, deleteSessionsByUser,
     insertEntry, updateEntry, findEntry, findEntryByCombo, listEntries, deleteEntry,
-    insertMark, deleteMarksByEntry, findMarksByEntry, findMarksByUsn, countStudentsByEntry
+    insertMark, deleteMarksByEntry, findMarksByEntry, countStudentsByEntry
 } = require('./database');
 
 const app = express();
@@ -112,6 +112,22 @@ app.post('/api/marks', authenticate('faculty'), async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
+        // Validate marks: none should exceed 50
+        for (const s of students) {
+            const vals = [
+                s.theory?.ia1, s.theory?.ia2, s.theory?.ia3, s.theory?.assignment,
+                s.lab?.internal, s.lab?.external
+            ];
+            for (const v of vals) {
+                if (v !== '' && v !== null && v !== undefined) {
+                    const num = Number(v);
+                    if (isNaN(num) || num < 0 || num > 50) {
+                        return res.status(400).json({ error: 'Marks must be between 0 and 50 for all fields. Found invalid value: ' + v + ' for student ' + s.usn });
+                    }
+                }
+            }
+        }
+
         const now = new Date().toISOString();
         const existing = await findEntryByCombo(semester, section, subject);
 
@@ -150,30 +166,9 @@ app.post('/api/marks', authenticate('faculty'), async (req, res) => {
 // ========================
 //  GET MARKS
 // ========================
-app.get('/api/marks', authenticate(), async (req, res) => {
+app.get('/api/marks', authenticate('faculty'), async (req, res) => {
     try {
         const { semester, section, subject } = req.query;
-
-        if (req.session.role === 'student') {
-            const user = await findUserById(req.session.user_id);
-            if (!user || !user.usn) return res.json({ entries: [] });
-
-            const rows = await findMarksByUsn(user.usn);
-
-            // Group by entry
-            const map = {};
-            for (const r of rows) {
-                if (!map[r.entry_id]) {
-                    map[r.entry_id] = { id: r.entry_id, semester: r.semester, section: r.section, subject: r.subject, updatedAt: r.updated_at, students: [] };
-                }
-                map[r.entry_id].students.push({
-                    usn: r.usn, name: r.name,
-                    theory: { ia1: r.ia1, ia2: r.ia2, ia3: r.ia3, assignment: r.assignment },
-                    lab: { internal: r.lab_internal, external: r.lab_external }
-                });
-            }
-            return res.json({ entries: Object.values(map) });
-        }
 
         // Faculty: get all entries
         let entries = await listEntries();
