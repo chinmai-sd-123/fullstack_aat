@@ -307,8 +307,7 @@ async function createUser() {
     var name = document.getElementById('newName').value.trim();
     var username = document.getElementById('newUsername').value.trim();
     var password = document.getElementById('newPassword').value.trim();
-    var role = document.getElementById('newRole').value;
-    var usn = document.getElementById('newUsn').value.trim();
+    var role = 'faculty';
 
     if (!name || !username || !password) {
         showToast('Fill in name, username, and password', 'error');
@@ -319,7 +318,7 @@ async function createUser() {
         var res = await fetch('/api/users', {
             method: 'POST',
             headers: Object.assign({}, getAuthHeaders(), { 'Content-Type': 'application/json' }),
-            body: JSON.stringify({ name: name, username: username, password: password, role: role, usn: usn })
+            body: JSON.stringify({ name: name, username: username, password: password, role: role })
         });
         var data = await res.json();
         if (!res.ok) throw new Error(data.error);
@@ -328,7 +327,6 @@ async function createUser() {
         document.getElementById('newName').value = '';
         document.getElementById('newUsername').value = '';
         document.getElementById('newPassword').value = '';
-        document.getElementById('newUsn').value = '';
         toggleAddUserForm();
         loadUsers();
         loadStats();

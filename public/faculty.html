@@ -38,7 +38,7 @@
             <div class="stat-card amber anim-fade-up d2">
                 <div class="stat-label">Registered Users</div>
                 <div class="stat-value" id="statUsers">0</div>
-                <div class="stat-sub">Faculty + Students</div>
+                <div class="stat-sub">Faculty</div>
             </div>
         </div>
 
@@ -184,17 +184,6 @@
                     </div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label for="newRole">Role</label>
-                        <select id="newRole" onchange="toggleUsnField()">
-                            <option value="student">Student</option>
-                            <option value="faculty">Faculty</option>
-                        </select>
-                    </div>
-                    <div class="form-group" id="usnFieldGroup">
-                        <label for="newUsn">USN (students only)</label>
-                        <input type="text" id="newUsn" placeholder="e.g. 1RV21CS011">
-                    </div>
                     <div class="form-group" style="display:flex; align-items:flex-end; gap:0.5rem;">
                         <button class="btn btn-success btn-sm" onclick="createUser()">Create Account</button>
                         <button class="btn btn-ghost btn-sm" onclick="toggleAddUserForm()">Cancel</button>
