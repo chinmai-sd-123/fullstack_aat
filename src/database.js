@@ -127,7 +127,11 @@ module.exports = {
     const res = await pool.query('SELECT * FROM marks_entries WHERE semester = $1 AND section = $2 AND subject = $3', [semester, section, subject]);
     return res.rows[0];
   },
-  listEntries: async () => {
+  listEntries: async (faculty_id) => {
+    if (faculty_id) {
+      const res = await pool.query('SELECT * FROM marks_entries WHERE faculty_id = $1 ORDER BY updated_at DESC', [faculty_id]);
+      return res.rows;
+    }
     const res = await pool.query('SELECT * FROM marks_entries ORDER BY updated_at DESC');
     return res.rows;
   },

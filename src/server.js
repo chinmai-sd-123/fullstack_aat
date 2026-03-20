@@ -184,8 +184,8 @@ app.get('/api/marks', authenticate('faculty'), async (req, res) => {
     try {
         const { semester, section, subject } = req.query;
 
-        // Faculty: get all entries
-        let entries = await listEntries();
+        // Faculty: get only their entries
+        let entries = await listEntries(req.session.user_id);
         if (semester) entries = entries.filter(e => e.semester === semester);
         if (section) entries = entries.filter(e => e.section === section);
         if (subject) entries = entries.filter(e => e.subject === subject);
@@ -295,7 +295,7 @@ app.get('/api/download/csv/:id', authenticate(), async (req, res) => {
 // ========================
 app.get('/api/entries', authenticate(), async (req, res) => {
     try {
-        const entries = await listEntries();
+        const entries = await listEntries(req.session.user_id);
         const result = await Promise.all(entries.map(async (e) => {
             const count = await countStudentsByEntry(e.id);
             return {
@@ -318,6 +318,10 @@ app.delete('/api/marks/:id', authenticate('faculty'), async (req, res) => {
     try {
         const entry = await findEntry(req.params.id);
         if (!entry) return res.status(404).json({ error: 'Entry not found' });
+
+        if (entry.faculty_id !== req.session.user_id) {
+            return res.status(403).json({ error: 'Unauthorized to delete this entry' });
+        }
 
         await deleteMarksByEntry(req.params.id);
         await deleteEntry(req.params.id);
