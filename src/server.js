@@ -197,7 +197,7 @@ app.get('/api/marks', authenticate('faculty'), async (req, res) => {
                 students: marks.map(m => ({
                     usn: m.usn, name: m.name,
                     theory: { ia1: m.ia1, ia2: m.ia2, ia3: m.ia3, assignment: m.assignment },
-                    lab: { internal: m.lab_internal, external: m.lab_external }
+                    lab: { marks: m.lab_internal }
                 }))
             };
         }));
@@ -221,7 +221,7 @@ app.get('/api/marks/:id', authenticate(), async (req, res) => {
                 students: marks.map(m => ({
                     usn: m.usn, name: m.name,
                     theory: { ia1: m.ia1, ia2: m.ia2, ia3: m.ia3, assignment: m.assignment },
-                    lab: { internal: m.lab_internal, external: m.lab_external }
+                    lab: { marks: m.lab_internal }
                 }))
             }
         });
