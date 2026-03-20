@@ -39,18 +39,21 @@ function generateExcel(entry) {
   XLSX.utils.book_append_sheet(wb, theorySheet, 'Theory Marks');
 
   // --- Lab Sheet ---
-  const labRows = entry.students.map((s, i) => ({
-    'Sl No': i + 1,
-    'USN': s.usn,
-    'Student Name': s.name,
-    'Lab Internal': s.lab?.internal ?? '',
-    'Lab External': s.lab?.external ?? '',
-    'Lab Total': calculateLabTotal(s.lab)
-  }));
+  const labRows = entry.students.map((s, i) => {
+    const labRaw = s.lab?.internal != null && s.lab.internal !== '' ? +s.lab.internal : null;
+    const lab20 = labRaw !== null ? Math.round((labRaw * 20 / 50) * 100) / 100 : '';
+    return {
+      'Sl No': i + 1,
+      'USN': s.usn,
+      'Student Name': s.name,
+      'Lab Marks(50)': labRaw !== null ? labRaw : '',
+      'Lab Marks(20)': lab20
+    };
+  });
   const labSheet = XLSX.utils.json_to_sheet(labRows);
   labSheet['!cols'] = [
     { wch: 6 }, { wch: 15 }, { wch: 25 },
-    { wch: 14 }, { wch: 14 }, { wch: 10 }
+    { wch: 14 }, { wch: 14 }
   ];
   XLSX.utils.book_append_sheet(wb, labSheet, 'Lab Marks');
 
@@ -88,15 +91,18 @@ function generateCSV(entry) {
   const theoryCsv = theoryParser.parse(theoryData);
 
   // Lab CSV
-  const labData = entry.students.map((s, i) => ({
-    SlNo: i + 1,
-    USN: s.usn,
-    StudentName: s.name,
-    LabInternal: s.lab?.internal ?? '',
-    LabExternal: s.lab?.external ?? '',
-    LabTotal: calculateLabTotal(s.lab)
-  }));
-  const labParser = new Parser({ fields: ['SlNo', 'USN', 'StudentName', 'LabInternal', 'LabExternal', 'LabTotal'] });
+  const labData = entry.students.map((s, i) => {
+    const labRaw = s.lab?.internal != null && s.lab.internal !== '' ? +s.lab.internal : null;
+    const lab20 = labRaw !== null ? Math.round((labRaw * 20 / 50) * 100) / 100 : '';
+    return {
+      SlNo: i + 1,
+      USN: s.usn,
+      StudentName: s.name,
+      LabMarks50: labRaw !== null ? labRaw : '',
+      LabMarks20: lab20
+    };
+  });
+  const labParser = new Parser({ fields: ['SlNo', 'USN', 'StudentName', 'LabMarks50', 'LabMarks20'] });
   const labCsv = labParser.parse(labData);
 
   return { theoryCsv, labCsv };
@@ -202,10 +208,9 @@ function calculateTheoryTotal(theory) {
 
 function calculateLabTotal(lab) {
   if (!lab) return '';
-  const internal = lab.internal != null ? +lab.internal : null;
-  const external = lab.external != null ? +lab.external : null;
-  if (internal === null && external === null) return '';
-  return (+internal || 0) + (+external || 0);
+  const marks = lab.internal != null && lab.internal !== '' ? +lab.internal : null;
+  if (marks === null) return '';
+  return Math.round((marks * 20 / 50) * 100) / 100;
 }
 
 module.exports = { generateExcel, generateCSV, parseStudentFile };

@@ -112,18 +112,32 @@ app.post('/api/marks', authenticate('faculty'), async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
-        // Validate marks: none should exceed 50
+        // Validate marks
         for (const s of students) {
-            const vals = [
-                s.theory?.ia1, s.theory?.ia2, s.theory?.ia3, s.theory?.assignment,
-                s.lab?.internal, s.lab?.external
-            ];
-            for (const v of vals) {
+            // IA1, IA2, IA3: max 50
+            const iaVals = [s.theory?.ia1, s.theory?.ia2, s.theory?.ia3];
+            for (const v of iaVals) {
                 if (v !== '' && v !== null && v !== undefined) {
                     const num = Number(v);
                     if (isNaN(num) || num < 0 || num > 50) {
-                        return res.status(400).json({ error: 'Marks must be between 0 and 50 for all fields. Found invalid value: ' + v + ' for student ' + s.usn });
+                        return res.status(400).json({ error: 'IA marks must be between 0 and 50. Found: ' + v + ' for ' + s.usn });
                     }
+                }
+            }
+            // Assignment: max 20
+            const assign = s.theory?.assignment;
+            if (assign !== '' && assign !== null && assign !== undefined) {
+                const num = Number(assign);
+                if (isNaN(num) || num < 0 || num > 20) {
+                    return res.status(400).json({ error: 'Assignment must be between 0 and 20. Found: ' + assign + ' for ' + s.usn });
+                }
+            }
+            // Lab: max 50
+            const labVal = s.lab?.marks;
+            if (labVal !== '' && labVal !== null && labVal !== undefined) {
+                const num = Number(labVal);
+                if (isNaN(num) || num < 0 || num > 50) {
+                    return res.status(400).json({ error: 'Lab marks must be between 0 and 50. Found: ' + labVal + ' for ' + s.usn });
                 }
             }
         }
@@ -148,7 +162,7 @@ app.post('/api/marks', authenticate('faculty'), async (req, res) => {
             await insertMark(
                 entryId, s.usn, s.name,
                 s.theory?.ia1 || '', s.theory?.ia2 || '', s.theory?.ia3 || '', s.theory?.assignment || '',
-                s.lab?.internal || '', s.lab?.external || ''
+                s.lab?.marks || '', ''
             );
         }
 

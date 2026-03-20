@@ -68,8 +68,7 @@ async function handleFileUpload() {
                     assignment: s.theory && s.theory.assignment !== undefined ? s.theory.assignment : ''
                 },
                 lab: {
-                    internal: s.lab && s.lab.internal !== undefined ? s.lab.internal : '',
-                    external: s.lab && s.lab.external !== undefined ? s.lab.external : ''
+                    marks: s.lab && s.lab.marks !== undefined ? s.lab.marks : (s.lab && s.lab.internal !== undefined ? s.lab.internal : '')
                 }
             };
         });
@@ -102,7 +101,7 @@ function buildMarksTable() {
             '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia1" value="' + s.theory.ia1 + '" placeholder="-">' +
             '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia2" value="' + s.theory.ia2 + '" placeholder="-">' +
             '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia3" value="' + s.theory.ia3 + '" placeholder="-">' +
-            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="assignment" value="' + s.theory.assignment + '" placeholder="-">';
+            '<td><input type="number" min="0" max="20" data-idx="' + i + '" data-field="assignment" value="' + s.theory.assignment + '" placeholder="-">';
         theoryBody.appendChild(tRow);
 
         var lRow = document.createElement('tr');
@@ -110,22 +109,22 @@ function buildMarksTable() {
             '<td class="col-sl">' + (i + 1) + '</td>' +
             '<td class="col-usn">' + s.usn + '</td>' +
             '<td class="col-name" title="' + s.name + '">' + s.name + '</td>' +
-            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="labInternal" value="' + s.lab.internal + '" placeholder="-">' +
-            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="labExternal" value="' + s.lab.external + '" placeholder="-">';
+            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="labMarks" value="' + s.lab.marks + '" placeholder="-">';
         labBody.appendChild(lRow);
     });
 
     document.getElementById('theoryTable').addEventListener('input', function (e) {
         if (e.target.tagName === 'INPUT') {
             var val = e.target.value;
-            if (val !== '' && (Number(val) > 50 || Number(val) < 0)) {
+            var field = e.target.dataset.field;
+            var maxVal = field === 'assignment' ? 20 : 50;
+            if (val !== '' && (Number(val) > maxVal || Number(val) < 0)) {
                 e.target.style.border = '2px solid #ef4444';
-                showToast('Marks must be between 0 and 50', 'error');
+                showToast('Marks must be between 0 and ' + maxVal, 'error');
                 return;
             }
             e.target.style.border = '';
             var idx = +e.target.dataset.idx;
-            var field = e.target.dataset.field;
             uploadedStudents[idx].theory[field] = val;
         }
     });
@@ -140,9 +139,7 @@ function buildMarksTable() {
             }
             e.target.style.border = '';
             var idx = +e.target.dataset.idx;
-            var field = e.target.dataset.field;
-            if (field === 'labInternal') uploadedStudents[idx].lab.internal = val;
-            if (field === 'labExternal') uploadedStudents[idx].lab.external = val;
+            uploadedStudents[idx].lab.marks = val;
         }
     });
 }
@@ -170,17 +167,34 @@ async function saveMarks() {
         return;
     }
 
-    // Client-side validation: no marks > 50
+    // Client-side validation
     for (var vi = 0; vi < uploadedStudents.length; vi++) {
         var st = uploadedStudents[vi];
-        var allVals = [st.theory.ia1, st.theory.ia2, st.theory.ia3, st.theory.assignment, st.lab.internal, st.lab.external];
-        for (var vj = 0; vj < allVals.length; vj++) {
-            if (allVals[vj] !== '' && allVals[vj] !== null && allVals[vj] !== undefined) {
-                var num = Number(allVals[vj]);
+        // IA1, IA2, IA3 max 50
+        var iaVals = [st.theory.ia1, st.theory.ia2, st.theory.ia3];
+        for (var vj = 0; vj < iaVals.length; vj++) {
+            if (iaVals[vj] !== '' && iaVals[vj] !== null && iaVals[vj] !== undefined) {
+                var num = Number(iaVals[vj]);
                 if (isNaN(num) || num < 0 || num > 50) {
-                    showToast('Marks must be between 0 and 50. Check ' + st.usn, 'error');
+                    showToast('IA marks must be between 0 and 50. Check ' + st.usn, 'error');
                     return;
                 }
+            }
+        }
+        // Assignment max 20
+        if (st.theory.assignment !== '' && st.theory.assignment !== null && st.theory.assignment !== undefined) {
+            var assignNum = Number(st.theory.assignment);
+            if (isNaN(assignNum) || assignNum < 0 || assignNum > 20) {
+                showToast('Assignment must be between 0 and 20. Check ' + st.usn, 'error');
+                return;
+            }
+        }
+        // Lab max 50
+        if (st.lab.marks !== '' && st.lab.marks !== null && st.lab.marks !== undefined) {
+            var labNum = Number(st.lab.marks);
+            if (isNaN(labNum) || labNum < 0 || labNum > 50) {
+                showToast('Lab marks must be between 0 and 50. Check ' + st.usn, 'error');
+                return;
             }
         }
     }
