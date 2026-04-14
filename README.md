@@ -8,13 +8,12 @@ A full-stack web application designed for faculty members to efficiently manage,
 *   **Personalized Dashboards:** Each faculty account has its own isolated workspace. A faculty member can only view, edit, and export the marks entries they have created.
 *   **Seamless Data Import:**
     *   Initialize a gradebook by uploading an Excel `.xlsx` or `.csv` file containing student `USN` and `Name`.
-    *   **Round-Trip Editing:** Downloaded CSVs and Excel files containing previously saved marks can be re-uploaded to continue editing exactly where you left off.
-*   **Automated Marks Calculation (Updated Scheme):**
-    *   **Theory:** Enter IA1, IA2, and IA3 out of **50**. The system automatically calculates the average (out of 50), scales it down to a maximum of **30**, and adds the Assignment marks (maximum **20**) for a total Theory score.
-    *   **Lab:** Enter raw Lab Marks out of **50**. The system automatically scales this down to a maximum of **20**.
-*   **Built-in Validation:** Real-time client and server-side validation ensures that no invalid marks (e.g., IA marks > 50, Assignment > 20) can be entered or saved.
+*   **Automated Marks Calculation (FSD Scheme):**
+    *   **Theory:** Enter IAT1, IAT2, and IAT3 out of **50**, Quiz out of **30**, and AAT out of **10**. The system calculates the reduced FSD columns and theory total.
+    *   **Lab:** Enter raw Lab Exam marks out of **50**. The system reduces them to the FSD lab marks column out of **20**.
+*   **Built-in Validation:** Real-time client and server-side validation ensures that no invalid marks (e.g., IAT marks > 50, Quiz > 30, AAT > 10) can be entered or saved.
 *   **Persistent Storage:** Data is securely stored using a PostgreSQL relational database (Neon DB).
-*   **Export Formats:** Generate and download comprehensive reports in both Excel (separated into Theory and Lab sheets) and CSV formats, detailing all raw scores, scaled averages, and final totals.
+*   **Export Formats:** Generate and download comprehensive FSD-format reports in both Excel and CSV, including raw scores, reduced columns, scaled averages, and final totals. Attendance columns are left blank.
 
 ## Technology Stack
 

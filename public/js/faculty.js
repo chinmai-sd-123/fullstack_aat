@@ -4,6 +4,93 @@ document.getElementById('navUserName').textContent = localStorage.getItem('userN
 
 var uploadedStudents = [];
 var currentEntryId = null;
+var courseDetailsSaved = false;
+var entryDirty = true;
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, function (ch) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+    });
+}
+
+function readStudentPayload(s) {
+    var theory = s.theory || {};
+    var lab = s.lab || {};
+    return {
+        usn: s.usn,
+        name: s.name,
+        theory: {
+            ia1: theory.ia1 !== undefined ? theory.ia1 : '',
+            ia2: theory.ia2 !== undefined ? theory.ia2 : '',
+            ia3: theory.ia3 !== undefined ? theory.ia3 : '',
+            quiz: theory.quiz !== undefined ? theory.quiz : '',
+            aat: theory.aat !== undefined ? theory.aat : ''
+        },
+        lab: {
+            exam: lab.exam !== undefined ? lab.exam : (lab.marks !== undefined ? lab.marks : (lab.internal !== undefined ? lab.internal : ''))
+        }
+    };
+}
+
+function setCourseDetailsSaved(isSaved) {
+    courseDetailsSaved = isSaved;
+    var badge = document.getElementById('courseSavedBadge');
+    var btn = document.getElementById('saveCourseBtn');
+    if (!badge || !btn) return;
+    badge.style.display = isSaved ? 'inline-flex' : 'none';
+    btn.textContent = isSaved ? 'Course Details Saved' : 'Save Course Details';
+}
+
+function setDownloadsReady(isReady) {
+    entryDirty = !isReady;
+    var excelBtn = document.getElementById('downloadExcelBtn');
+    var csvBtn = document.getElementById('downloadCsvBtn');
+    if (excelBtn) excelBtn.style.display = isReady ? 'inline-flex' : 'none';
+    if (csvBtn) csvBtn.style.display = isReady ? 'inline-flex' : 'none';
+}
+
+function markEntryDirty() {
+    setDownloadsReady(false);
+}
+
+function syncMarksFromInputs() {
+    document.querySelectorAll('#theoryTable input').forEach(function (input) {
+        var idx = Number(input.dataset.idx);
+        var field = input.dataset.field;
+        if (!Number.isNaN(idx) && uploadedStudents[idx] && field) {
+            uploadedStudents[idx].theory[field] = input.value;
+        }
+    });
+
+    document.querySelectorAll('#labTable input').forEach(function (input) {
+        var idx = Number(input.dataset.idx);
+        if (!Number.isNaN(idx) && uploadedStudents[idx]) {
+            uploadedStudents[idx].lab.exam = input.value;
+        }
+    });
+}
+
+function saveCourseDetails() {
+    var semester = document.getElementById('semester').value;
+    var section = document.getElementById('section').value;
+    var subject = document.getElementById('subject').value.trim();
+    var courseCode = document.getElementById('courseCode').value.trim();
+
+    if (!semester || !section || !subject || !courseCode) {
+        setCourseDetailsSaved(false);
+        showToast('Please fill semester, section, subject, and course code', 'error');
+        return;
+    }
+
+    setCourseDetailsSaved(true);
+    showToast('Course details saved');
+}
+
+['semester', 'section', 'subject', 'courseCode'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', function () { setCourseDetailsSaved(false); markEntryDirty(); });
+    if (el) el.addEventListener('change', function () { setCourseDetailsSaved(false); markEntryDirty(); });
+});
 
 // ---- STATS ----
 async function loadStats() {
@@ -57,21 +144,8 @@ async function handleFileUpload() {
         var data = await res.json();
         if (!res.ok) throw new Error(data.error);
 
-        uploadedStudents = data.students.map(function (s) {
-            return {
-                usn: s.usn,
-                name: s.name,
-                theory: {
-                    ia1: s.theory && s.theory.ia1 !== undefined ? s.theory.ia1 : '',
-                    ia2: s.theory && s.theory.ia2 !== undefined ? s.theory.ia2 : '',
-                    ia3: s.theory && s.theory.ia3 !== undefined ? s.theory.ia3 : '',
-                    assignment: s.theory && s.theory.assignment !== undefined ? s.theory.assignment : ''
-                },
-                lab: {
-                    marks: s.lab && s.lab.marks !== undefined ? s.lab.marks : (s.lab && s.lab.internal !== undefined ? s.lab.internal : '')
-                }
-            };
-        });
+        uploadedStudents = data.students.map(readStudentPayload);
+        currentEntryId = null;
 
         var badge = document.getElementById('studentCountBadge');
         badge.style.display = 'inline-flex';
@@ -79,6 +153,7 @@ async function handleFileUpload() {
 
         buildMarksTable();
         document.getElementById('marksCard').style.display = 'block';
+        setDownloadsReady(false);
         showToast(uploadedStudents.length + ' students uploaded successfully');
     } catch (err) {
         showToast(err.message, 'error');
@@ -96,28 +171,29 @@ function buildMarksTable() {
         var tRow = document.createElement('tr');
         tRow.innerHTML =
             '<td class="col-sl">' + (i + 1) + '</td>' +
-            '<td class="col-usn">' + s.usn + '</td>' +
-            '<td class="col-name" title="' + s.name + '">' + s.name + '</td>' +
-            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia1" value="' + s.theory.ia1 + '" placeholder="-">' +
-            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia2" value="' + s.theory.ia2 + '" placeholder="-">' +
-            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia3" value="' + s.theory.ia3 + '" placeholder="-">' +
-            '<td><input type="number" min="0" max="20" data-idx="' + i + '" data-field="assignment" value="' + s.theory.assignment + '" placeholder="-">';
+            '<td class="col-usn">' + escapeHtml(s.usn) + '</td>' +
+            '<td class="col-name" title="' + escapeHtml(s.name) + '">' + escapeHtml(s.name) + '</td>' +
+            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia1" value="' + escapeHtml(s.theory.ia1) + '" placeholder="-">' +
+            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia2" value="' + escapeHtml(s.theory.ia2) + '" placeholder="-">' +
+            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="ia3" value="' + escapeHtml(s.theory.ia3) + '" placeholder="-">' +
+            '<td><input type="number" min="0" max="30" data-idx="' + i + '" data-field="quiz" value="' + escapeHtml(s.theory.quiz) + '" placeholder="-">' +
+            '<td><input type="number" min="0" max="10" data-idx="' + i + '" data-field="aat" value="' + escapeHtml(s.theory.aat) + '" placeholder="-">';
         theoryBody.appendChild(tRow);
 
         var lRow = document.createElement('tr');
         lRow.innerHTML =
             '<td class="col-sl">' + (i + 1) + '</td>' +
-            '<td class="col-usn">' + s.usn + '</td>' +
-            '<td class="col-name" title="' + s.name + '">' + s.name + '</td>' +
-            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="labMarks" value="' + s.lab.marks + '" placeholder="-">';
+            '<td class="col-usn">' + escapeHtml(s.usn) + '</td>' +
+            '<td class="col-name" title="' + escapeHtml(s.name) + '">' + escapeHtml(s.name) + '</td>' +
+            '<td><input type="number" min="0" max="50" data-idx="' + i + '" data-field="labExam" value="' + escapeHtml(s.lab.exam) + '" placeholder="-">';
         labBody.appendChild(lRow);
     });
 
-    document.getElementById('theoryTable').addEventListener('input', function (e) {
+    document.getElementById('theoryTable').oninput = function (e) {
         if (e.target.tagName === 'INPUT') {
             var val = e.target.value;
             var field = e.target.dataset.field;
-            var maxVal = field === 'assignment' ? 20 : 50;
+            var maxVal = field === 'quiz' ? 30 : (field === 'aat' ? 10 : 50);
             if (val !== '' && (Number(val) > maxVal || Number(val) < 0)) {
                 e.target.style.border = '2px solid #ef4444';
                 showToast('Marks must be between 0 and ' + maxVal, 'error');
@@ -126,10 +202,11 @@ function buildMarksTable() {
             e.target.style.border = '';
             var idx = +e.target.dataset.idx;
             uploadedStudents[idx].theory[field] = val;
+            markEntryDirty();
         }
-    });
+    };
 
-    document.getElementById('labTable').addEventListener('input', function (e) {
+    document.getElementById('labTable').oninput = function (e) {
         if (e.target.tagName === 'INPUT') {
             var val = e.target.value;
             if (val !== '' && (Number(val) > 50 || Number(val) < 0)) {
@@ -139,9 +216,10 @@ function buildMarksTable() {
             }
             e.target.style.border = '';
             var idx = +e.target.dataset.idx;
-            uploadedStudents[idx].lab.marks = val;
+            uploadedStudents[idx].lab.exam = val;
+            markEntryDirty();
         }
-    });
+    };
 }
 
 // ---- TABS ----
@@ -157,15 +235,21 @@ async function saveMarks() {
     var semester = document.getElementById('semester').value;
     var section = document.getElementById('section').value;
     var subject = document.getElementById('subject').value.trim();
+    var courseCode = document.getElementById('courseCode').value.trim();
 
-    if (!semester || !section || !subject) {
-        showToast('Please fill semester, section, and subject', 'error');
+    if (!semester || !section || !subject || !courseCode) {
+        showToast('Please fill semester, section, subject, and course code', 'error');
+        return;
+    }
+    if (!courseDetailsSaved) {
+        showToast('Save course details first', 'error');
         return;
     }
     if (!uploadedStudents.length) {
         showToast('Upload a student list first', 'error');
         return;
     }
+    syncMarksFromInputs();
 
     // Client-side validation
     for (var vi = 0; vi < uploadedStudents.length; vi++) {
@@ -181,19 +265,24 @@ async function saveMarks() {
                 }
             }
         }
-        // Assignment max 20
-        if (st.theory.assignment !== '' && st.theory.assignment !== null && st.theory.assignment !== undefined) {
-            var assignNum = Number(st.theory.assignment);
-            if (isNaN(assignNum) || assignNum < 0 || assignNum > 20) {
-                showToast('Assignment must be between 0 and 20. Check ' + st.usn, 'error');
+        if (st.theory.quiz !== '' && st.theory.quiz !== null && st.theory.quiz !== undefined) {
+            var quizNum = Number(st.theory.quiz);
+            if (isNaN(quizNum) || quizNum < 0 || quizNum > 30) {
+                showToast('Quiz marks must be between 0 and 30. Check ' + st.usn, 'error');
                 return;
             }
         }
-        // Lab max 50
-        if (st.lab.marks !== '' && st.lab.marks !== null && st.lab.marks !== undefined) {
-            var labNum = Number(st.lab.marks);
+        if (st.theory.aat !== '' && st.theory.aat !== null && st.theory.aat !== undefined) {
+            var aatNum = Number(st.theory.aat);
+            if (isNaN(aatNum) || aatNum < 0 || aatNum > 10) {
+                showToast('AAT marks must be between 0 and 10. Check ' + st.usn, 'error');
+                return;
+            }
+        }
+        if (st.lab.exam !== '' && st.lab.exam !== null && st.lab.exam !== undefined) {
+            var labNum = Number(st.lab.exam);
             if (isNaN(labNum) || labNum < 0 || labNum > 50) {
-                showToast('Lab marks must be between 0 and 50. Check ' + st.usn, 'error');
+                showToast('Lab exam marks must be between 0 and 50. Check ' + st.usn, 'error');
                 return;
             }
         }
@@ -207,7 +296,7 @@ async function saveMarks() {
         var res = await fetch('/api/marks', {
             method: 'POST',
             headers: Object.assign({}, getAuthHeaders(), { 'Content-Type': 'application/json' }),
-            body: JSON.stringify({ semester: semester, section: section, subject: subject, students: uploadedStudents })
+            body: JSON.stringify({ semester: semester, section: section, subject: subject, courseCode: courseCode, students: uploadedStudents })
         });
         var data = await res.json();
         if (!res.ok) throw new Error(data.error);
@@ -215,8 +304,7 @@ async function saveMarks() {
         currentEntryId = data.entryId;
         showToast('Marks saved successfully');
 
-        document.getElementById('downloadExcelBtn').style.display = 'inline-flex';
-        document.getElementById('downloadCsvBtn').style.display = 'inline-flex';
+        setDownloadsReady(true);
         loadSavedEntries();
         loadStats();
     } catch (err) {
@@ -232,11 +320,13 @@ function getTokenParam() { return '?token=' + (localStorage.getItem('token') || 
 
 function downloadExcel() {
     if (!currentEntryId) return showToast('Save marks first', 'error');
+    if (entryDirty) return showToast('Save marks before downloading the latest Excel', 'error');
     window.location.href = '/api/download/excel/' + currentEntryId + getTokenParam();
 }
 
 function downloadCSV() {
     if (!currentEntryId) return showToast('Save marks first', 'error');
+    if (entryDirty) return showToast('Save marks before downloading the latest CSV', 'error');
     window.location.href = '/api/download/csv/' + currentEntryId + getTokenParam();
 }
 
@@ -253,10 +343,11 @@ async function loadSavedEntries() {
         }
 
         list.innerHTML = data.entries.map(function (e, i) {
+            var courseCodeText = e.courseCode ? ' &middot; ' + escapeHtml(e.courseCode) : '';
             return '<div class="entry-row" style="animation-delay:' + (i * 0.06) + 's">' +
                 '<div class="entry-info">' +
-                '<div class="entry-name">' + e.subject + '</div>' +
-                '<div class="entry-detail">Sem ' + e.semester + ' &middot; Sec ' + e.section + ' &middot; ' + e.studentCount + ' students &middot; ' + new Date(e.updatedAt).toLocaleString() + '</div>' +
+                '<div class="entry-name">' + escapeHtml(e.subject) + '</div>' +
+                '<div class="entry-detail">Sem ' + escapeHtml(e.semester) + ' &middot; Sec ' + escapeHtml(e.section) + courseCodeText + ' &middot; ' + e.studentCount + ' students &middot; ' + new Date(e.updatedAt).toLocaleString() + '</div>' +
                 '</div>' +
                 '<div class="entry-btns">' +
                 '<button class="btn btn-primary btn-sm" onclick="downloadEntryExcel(\'' + e.id + '\')">Excel</button>' +
@@ -284,8 +375,10 @@ async function loadEntry(id) {
         document.getElementById('semester').value = entry.semester;
         document.getElementById('section').value = entry.section;
         document.getElementById('subject').value = entry.subject;
+        document.getElementById('courseCode').value = entry.courseCode || '';
+        setCourseDetailsSaved(true);
 
-        uploadedStudents = entry.students;
+        uploadedStudents = entry.students.map(readStudentPayload);
         currentEntryId = entry.id;
 
         var badge = document.getElementById('studentCountBadge');
@@ -294,8 +387,7 @@ async function loadEntry(id) {
 
         buildMarksTable();
         document.getElementById('marksCard').style.display = 'block';
-        document.getElementById('downloadExcelBtn').style.display = 'inline-flex';
-        document.getElementById('downloadCsvBtn').style.display = 'inline-flex';
+        setDownloadsReady(true);
 
         showToast('Entry loaded for editing');
         window.scrollTo({ top: 0, behavior: 'smooth' });

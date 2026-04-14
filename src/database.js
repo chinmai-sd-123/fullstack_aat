@@ -34,6 +34,7 @@ async function initDb() {
                 semester TEXT NOT NULL,
                 section TEXT NOT NULL,
                 subject TEXT NOT NULL,
+                course_code TEXT DEFAULT '',
                 faculty_id TEXT NOT NULL REFERENCES users(id),
                 updated_at TIMESTAMP NOT NULL
             );
@@ -47,9 +48,22 @@ async function initDb() {
                 ia2 TEXT DEFAULT '',
                 ia3 TEXT DEFAULT '',
                 assignment TEXT DEFAULT '',
+                quiz TEXT DEFAULT '',
+                aat TEXT DEFAULT '',
+                lab_exam TEXT DEFAULT '',
                 lab_internal TEXT DEFAULT '',
                 lab_external TEXT DEFAULT ''
             );
+        `);
+
+    await pool.query(`
+            ALTER TABLE marks_entries
+            ADD COLUMN IF NOT EXISTS course_code TEXT DEFAULT '';
+
+            ALTER TABLE student_marks
+            ADD COLUMN IF NOT EXISTS quiz TEXT DEFAULT '',
+            ADD COLUMN IF NOT EXISTS aat TEXT DEFAULT '',
+            ADD COLUMN IF NOT EXISTS lab_exam TEXT DEFAULT '';
         `);
 
     // Seed default users if table is empty
@@ -113,18 +127,18 @@ module.exports = {
   },
 
   // Marks entries
-  insertEntry: async (id, semester, section, subject, faculty_id, updated_at) => {
-    await pool.query('INSERT INTO marks_entries (id, semester, section, subject, faculty_id, updated_at) VALUES ($1, $2, $3, $4, $5, $6)', [id, semester, section, subject, faculty_id, updated_at]);
+  insertEntry: async (id, semester, section, subject, course_code, faculty_id, updated_at) => {
+    await pool.query('INSERT INTO marks_entries (id, semester, section, subject, course_code, faculty_id, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)', [id, semester, section, subject, course_code, faculty_id, updated_at]);
   },
-  updateEntry: async (semester, section, subject, faculty_id, updated_at, id) => {
-    await pool.query('UPDATE marks_entries SET semester = $1, section = $2, subject = $3, faculty_id = $4, updated_at = $5 WHERE id = $6', [semester, section, subject, faculty_id, updated_at, id]);
+  updateEntry: async (semester, section, subject, course_code, faculty_id, updated_at, id) => {
+    await pool.query('UPDATE marks_entries SET semester = $1, section = $2, subject = $3, course_code = $4, faculty_id = $5, updated_at = $6 WHERE id = $7', [semester, section, subject, course_code, faculty_id, updated_at, id]);
   },
   findEntry: async (id) => {
     const res = await pool.query('SELECT * FROM marks_entries WHERE id = $1', [id]);
     return res.rows[0];
   },
-  findEntryByCombo: async (semester, section, subject) => {
-    const res = await pool.query('SELECT * FROM marks_entries WHERE semester = $1 AND section = $2 AND subject = $3', [semester, section, subject]);
+  findEntryByCombo: async (semester, section, subject, course_code) => {
+    const res = await pool.query('SELECT * FROM marks_entries WHERE semester = $1 AND section = $2 AND subject = $3 AND course_code = $4', [semester, section, subject, course_code]);
     return res.rows[0];
   },
   listEntries: async (faculty_id) => {
@@ -140,8 +154,8 @@ module.exports = {
   },
 
   // Student marks
-  insertMark: async (entry_id, usn, name, ia1, ia2, ia3, assignment, lab_internal, lab_external) => {
-    await pool.query('INSERT INTO student_marks (entry_id, usn, name, ia1, ia2, ia3, assignment, lab_internal, lab_external) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)', [entry_id, usn, name, ia1, ia2, ia3, assignment, lab_internal, lab_external]);
+  insertMark: async (entry_id, usn, name, ia1, ia2, ia3, quiz, aat, lab_exam) => {
+    await pool.query('INSERT INTO student_marks (entry_id, usn, name, ia1, ia2, ia3, quiz, aat, lab_exam) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)', [entry_id, usn, name, ia1, ia2, ia3, quiz, aat, lab_exam]);
   },
   deleteMarksByEntry: async (entry_id) => {
     await pool.query('DELETE FROM student_marks WHERE entry_id = $1', [entry_id]);

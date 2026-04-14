@@ -107,8 +107,8 @@ app.post('/api/upload-students', authenticate('faculty'), upload.single('file'),
 app.post('/api/marks', authenticate('faculty'), async (req, res) => {
     const client = await pool.connect();
     try {
-        const { semester, section, subject, students } = req.body;
-        if (!semester || !section || !subject || !students || !students.length) {
+        const { semester, section, subject, courseCode, students } = req.body;
+        if (!semester || !section || !subject || !courseCode || !students || !students.length) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
@@ -124,45 +124,51 @@ app.post('/api/marks', authenticate('faculty'), async (req, res) => {
                     }
                 }
             }
-            // Assignment: max 20
-            const assign = s.theory?.assignment;
-            if (assign !== '' && assign !== null && assign !== undefined) {
-                const num = Number(assign);
-                if (isNaN(num) || num < 0 || num > 20) {
-                    return res.status(400).json({ error: 'Assignment must be between 0 and 20. Found: ' + assign + ' for ' + s.usn });
+            const quiz = s.theory?.quiz;
+            if (quiz !== '' && quiz !== null && quiz !== undefined) {
+                const num = Number(quiz);
+                if (isNaN(num) || num < 0 || num > 30) {
+                    return res.status(400).json({ error: 'Quiz marks must be between 0 and 30. Found: ' + quiz + ' for ' + s.usn });
+                }
+            }
+            const aat = s.theory?.aat;
+            if (aat !== '' && aat !== null && aat !== undefined) {
+                const num = Number(aat);
+                if (isNaN(num) || num < 0 || num > 10) {
+                    return res.status(400).json({ error: 'AAT marks must be between 0 and 10. Found: ' + aat + ' for ' + s.usn });
                 }
             }
             // Lab: max 50
-            const labVal = s.lab?.marks;
+            const labVal = s.lab?.exam ?? s.lab?.marks;
             if (labVal !== '' && labVal !== null && labVal !== undefined) {
                 const num = Number(labVal);
                 if (isNaN(num) || num < 0 || num > 50) {
-                    return res.status(400).json({ error: 'Lab marks must be between 0 and 50. Found: ' + labVal + ' for ' + s.usn });
+                    return res.status(400).json({ error: 'Lab exam marks must be between 0 and 50. Found: ' + labVal + ' for ' + s.usn });
                 }
             }
         }
 
         const now = new Date().toISOString();
-        const existing = await findEntryByCombo(semester, section, subject);
+        const existing = await findEntryByCombo(semester, section, subject, courseCode);
 
         await client.query('BEGIN'); // Start transaction
 
         let entryId;
         if (existing) {
             entryId = existing.id;
-            await updateEntry(semester, section, subject, req.session.user_id, now, entryId);
+            await updateEntry(semester, section, subject, courseCode, req.session.user_id, now, entryId);
             await deleteMarksByEntry(entryId);
         } else {
             entryId = uuidv4();
-            await insertEntry(entryId, semester, section, subject, req.session.user_id, now);
+            await insertEntry(entryId, semester, section, subject, courseCode, req.session.user_id, now);
         }
 
         // Insert all student marks
         for (const s of students) {
             await insertMark(
                 entryId, s.usn, s.name,
-                s.theory?.ia1 || '', s.theory?.ia2 || '', s.theory?.ia3 || '', s.theory?.assignment || '',
-                s.lab?.marks || '', ''
+                s.theory?.ia1 || '', s.theory?.ia2 || '', s.theory?.ia3 || '',
+                s.theory?.quiz || '', s.theory?.aat || '', (s.lab?.exam ?? s.lab?.marks) || ''
             );
         }
 
@@ -193,11 +199,11 @@ app.get('/api/marks', authenticate('faculty'), async (req, res) => {
         const result = await Promise.all(entries.map(async (e) => {
             const marks = await findMarksByEntry(e.id);
             return {
-                id: e.id, semester: e.semester, section: e.section, subject: e.subject, updatedAt: e.updated_at,
+                id: e.id, semester: e.semester, section: e.section, subject: e.subject, courseCode: e.course_code || '', updatedAt: e.updated_at,
                 students: marks.map(m => ({
                     usn: m.usn, name: m.name,
-                    theory: { ia1: m.ia1, ia2: m.ia2, ia3: m.ia3, assignment: m.assignment },
-                    lab: { marks: m.lab_internal }
+                    theory: { ia1: m.ia1, ia2: m.ia2, ia3: m.ia3, quiz: m.quiz || '', aat: m.aat || '' },
+                    lab: { exam: m.lab_exam || m.lab_internal || '' }
                 }))
             };
         }));
@@ -217,11 +223,11 @@ app.get('/api/marks/:id', authenticate(), async (req, res) => {
 
         res.json({
             entry: {
-                id: entry.id, semester: entry.semester, section: entry.section, subject: entry.subject, updatedAt: entry.updated_at,
+                id: entry.id, semester: entry.semester, section: entry.section, subject: entry.subject, courseCode: entry.course_code || '', updatedAt: entry.updated_at,
                 students: marks.map(m => ({
                     usn: m.usn, name: m.name,
-                    theory: { ia1: m.ia1, ia2: m.ia2, ia3: m.ia3, assignment: m.assignment },
-                    lab: { marks: m.lab_internal }
+                    theory: { ia1: m.ia1, ia2: m.ia2, ia3: m.ia3, quiz: m.quiz || '', aat: m.aat || '' },
+                    lab: { exam: m.lab_exam || m.lab_internal || '' }
                 }))
             }
         });
@@ -244,8 +250,8 @@ app.get('/api/download/excel/:id', authenticate(), async (req, res) => {
             ...entry,
             students: marks.map(m => ({
                 usn: m.usn, name: m.name,
-                theory: { ia1: m.ia1, ia2: m.ia2, ia3: m.ia3, assignment: m.assignment },
-                lab: { internal: m.lab_internal, external: m.lab_external }
+                theory: { ia1: m.ia1, ia2: m.ia2, ia3: m.ia3, quiz: m.quiz || '', aat: m.aat || '' },
+                lab: { exam: m.lab_exam || m.lab_internal || '' }
             }))
         };
 
@@ -273,13 +279,13 @@ app.get('/api/download/csv/:id', authenticate(), async (req, res) => {
             ...entry,
             students: marks.map(m => ({
                 usn: m.usn, name: m.name,
-                theory: { ia1: m.ia1, ia2: m.ia2, ia3: m.ia3, assignment: m.assignment },
-                lab: { internal: m.lab_internal, external: m.lab_external }
+                theory: { ia1: m.ia1, ia2: m.ia2, ia3: m.ia3, quiz: m.quiz || '', aat: m.aat || '' },
+                lab: { exam: m.lab_exam || m.lab_internal || '' }
             }))
         };
 
-        const { theoryCsv, labCsv } = generateCSV(data);
-        const combined = '--- THEORY MARKS ---\n' + theoryCsv + '\n\n--- LAB MARKS ---\n' + labCsv;
+        const { theoryCsv } = generateCSV(data);
+        const combined = theoryCsv;
         const filename = entry.subject + '_Sem' + entry.semester + '_Sec' + entry.section + '.csv';
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
@@ -299,7 +305,7 @@ app.get('/api/entries', authenticate(), async (req, res) => {
         const result = await Promise.all(entries.map(async (e) => {
             const count = await countStudentsByEntry(e.id);
             return {
-                id: e.id, semester: e.semester, section: e.section, subject: e.subject,
+                id: e.id, semester: e.semester, section: e.section, subject: e.subject, courseCode: e.course_code || '',
                 studentCount: count,
                 updatedAt: e.updated_at
             };

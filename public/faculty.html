@@ -76,6 +76,14 @@
                     <label for="subject">IPCC Subject</label>
                     <input type="text" id="subject" placeholder="e.g. Data Structures">
                 </div>
+                <div class="form-group">
+                    <label for="courseCode">Course Code</label>
+                    <input type="text" id="courseCode" placeholder="e.g. 22IS62">
+                </div>
+            </div>
+            <div class="actions course-actions">
+                <button class="btn btn-primary" id="saveCourseBtn" onclick="saveCourseDetails()">Save Course Details</button>
+                <span id="courseSavedBadge" class="loaded-badge" style="display:none;">Course details saved</span>
             </div>
         </div>
 
@@ -113,10 +121,11 @@
                                 <th>Sl</th>
                                 <th>USN</th>
                                 <th>Name</th>
-                                <th>IA 1</th>
-                                <th>IA 2</th>
-                                <th>IA 3</th>
-                                <th>Assign.</th>
+                                <th>IAT 1 (50)</th>
+                                <th>IAT 2 (50)</th>
+                                <th>IAT 3 (50)</th>
+                                <th>Quiz (30)</th>
+                                <th>AAT (10)</th>
                             </tr>
                         </thead>
                         <tbody id="theoryBody"></tbody>
@@ -132,7 +141,7 @@
                                 <th>Sl</th>
                                 <th>USN</th>
                                 <th>Name</th>
-                                <th>Lab Marks (50)</th>
+                                <th>Lab Exam (50)</th>
                             </tr>
                         </thead>
                         <tbody id="labBody"></tbody>

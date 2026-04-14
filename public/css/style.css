@@ -1006,6 +1006,17 @@ body {
     border-top: 1px solid var(--gray-100);
 }
 
+.course-actions {
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 0;
+    border-top: none;
+}
+
+.course-actions .loaded-badge {
+    margin-top: 0;
+}
+
 /* ================================================
    TOAST
    ================================================ */
